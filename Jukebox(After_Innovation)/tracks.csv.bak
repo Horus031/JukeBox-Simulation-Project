@@ -1,10 +1,14 @@
 track_id,name,artist,rating,play_count
-01,Another Brick in the Wall,Pink Floyd,3,9
-02,Stayin' Alive,Bee Gees,5,13
+01,Another Brick in the Wall,Pink Floyd,3,12
+02,Stayin' Alive,Bee Gees,5,16
 03,Highway to Hell,AC/DC,4,9
-04,Shape of You,Ed Sheeran,3,22
-05,Someone Like You,Adele,3,15
-06,"Naughty Boy, Sam Smith - La la la (Lyrics)",7clouds,5,25
-07,Justin Bieber - Love Yourself (Lyrics),LEMON3 LYRICS,4,21
-08,Ruth B. - Dandelions (Lyrics),7clouds,5,17
-09,Imagine Dragons - Believer (Lyrics),7clouds,4,11
+04,Shape of You,Ed Sheeran,5,35
+05,Someone Like You,Adele,5,15
+06,"Naughty Boy, Sam Smith - La la la (Lyrics)",7clouds,5,31
+07,Justin Bieber - Love Yourself (Lyrics),LEMON3 LYRICS,4,26
+08,Ruth B. - Dandelions (Lyrics),7clouds,5,19
+09,Imagine Dragons - Believer (Lyrics),7clouds,3,13
+10,"QUA TỪNG KHUNG HÌNH - Robber, NGẮN | Rap Việt 2024 [Mv Lyrics]",Vie Channel - MUSIC,5,5
+11,Alicia Keys - If I Ain&#39;t Got You (Lyrics),7clouds,5,3
+12,"Sam Smith, Kim Petras - Unholy (Official Music Video)",SamSmithVEVO,0,2
+13,Dhruv - double take (Official Audio),Dhruv,0,1

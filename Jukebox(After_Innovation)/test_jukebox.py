@@ -74,5 +74,3 @@ def test_volume_control(app):
     
     app.update_volume(0)
     assert app.player._volume == 0.0
-
-# Note: More UI tests would be needed but require complex setup due to GUI nature

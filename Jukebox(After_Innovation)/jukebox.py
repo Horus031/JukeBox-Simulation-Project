@@ -452,37 +452,49 @@ class PlaylistManager:  # Define PlaylistManager class for managing playlists
             print(f"Error listing playlists: {e}")  # Print error message
             return []  # Return empty list
 
-    def load_playlist(self, playlist_name):  # Method to load a specific playlist
-        """Load a specific playlist file"""
-        try:  # Try block to handle exceptions
-            playlist = []  # Initialize list to store tracks
-            file_path = os.path.join(self.playlists_dir, playlist_name)  # Construct file path
-            with open(file_path, "r") as f:  # Open playlist file for reading
-                for line in f:  # Iterate over each line in the file
-                    # Parse track_id and name from line
-                    parts = line.strip().split(" - ", 1)  # Split line into parts
-                    if len(parts) == 2:  # Check if line has two parts
-                        playlist.append((parts[0], parts[1]))  # Append track ID and name to playlist
-            return playlist  # Return the loaded playlist
-        except Exception as e:  # Catch any exceptions
-            print(f"Error loading playlist {playlist_name}: {e}")  # Print error message
-            return []  # Return empty list
+    def load_playlist(self, playlist_name):
+        """Load a specific playlist file with UTF-8 encoding"""
+        try:
+            playlist = []
+            file_path = os.path.join(self.playlists_dir, playlist_name)
+            with open(file_path, "r", encoding='utf-8') as f:
+                for line in f:
+                    parts = line.strip().split(" - ", 1)
+                    if len(parts) == 2:
+                        playlist.append((parts[0], parts[1]))
+            return playlist
+        except Exception as e:
+            print(f"Error loading playlist {playlist_name}: {e}")
+            return []
 
-    def save_playlist(self, playlist_name, tracks):  # Method to save playlist to a file
-        """Save playlist to a specific file"""
-        try:  # Try block to handle exceptions
+    def save_playlist(self, playlist_name, tracks):
+        """Save playlist to a specific file with UTF-8 encoding"""
+        try:
             # Ensure .txt extension
-            if not playlist_name.endswith('.txt'):  # Check if playlist name has .txt extension
-                playlist_name += '.txt'  # Add .txt extension
+            if not playlist_name.endswith('.txt'):
+                playlist_name += '.txt'
             
-            file_path = os.path.join(self.playlists_dir, playlist_name)  # Construct file path
-            with open(file_path, "w") as f:  # Open file for writing
-                for track_id, track_name in tracks:  # Iterate over tracks
-                    f.write(f"{track_id} - {track_name}\n")  # Write track ID and name to file
-            return True  # Return success
-        except Exception as e:  # Catch any exceptions
-            print(f"Error saving playlist {playlist_name}: {e}")  # Print error message
-            return False  # Return failure
+            file_path = os.path.join(self.playlists_dir, playlist_name)
+            
+            # First write to a temporary file
+            temp_file = file_path + '.tmp'
+            try:
+                with open(temp_file, "w", encoding='utf-8', newline='') as f:
+                    for track_id, track_name in tracks:
+                        f.write(f"{track_id} - {track_name}\n")
+                
+                # If temporary file was written successfully, replace the original file
+                os.replace(temp_file, file_path)
+                return True
+            except Exception as e:
+                # Clean up temporary file if it exists
+                if os.path.exists(temp_file):
+                    os.remove(temp_file)
+                raise e
+                
+        except Exception as e:
+            print(f"Error saving playlist {playlist_name}: {e}")
+            return False
 
     def delete_playlist(self, playlist_name):  # Method to delete a playlist file
         """Delete a playlist file"""
