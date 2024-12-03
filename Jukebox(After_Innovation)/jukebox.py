@@ -2,6 +2,7 @@ import os  # Import the os module for operating system dependent functionality
 import asyncio  # Import asyncio for asynchronous programming
 from googleapiclient.discovery import build  # Import build function to create a Google API client
 from googleapiclient.errors import HttpError  # Import HttpError to handle API errors
+from dotenv import load_dotenv
 import yt_dlp  # Import yt-dlp for downloading videos from YouTube
 import aiohttp  # Import aiohttp for making asynchronous HTTP requests
 import subprocess  # Import subprocess to run external commands
@@ -19,31 +20,66 @@ from typing import List, Tuple, Optional, Dict  # Import typing constructs for t
 from track_library import library, LibraryObserver  # Import library and observer classes for track management
 from library_item import MusicPlayer, PlayerObserver, SequentialPlaybackStrategy, RandomPlaybackStrategy  # Import music player and playback strategies
 
-class YouTubeAPI:  # Define YouTubeAPI class for interacting with YouTube API
-    def __init__(self):  # Constructor for the YouTubeAPI class
-        try:  # Try block to handle exceptions
-            self.api_key = "AIzaSyBJFe5CmkdMK1m1_M6BNCFEtdFymLs8yYg"  # Set API key for YouTube API
-            self.youtube = build('youtube', 'v3', developerKey=self.api_key)  # Build YouTube API client
+# Your existing imports remain at the top
+import os
+import asyncio
+# ... other imports ...
 
-            # Configure yt-dlp options for downloading audio
-            self.ydl_opts = { 
-                'format': 'bestaudio/best',  # Set the format to best audio
-                'postprocessors': [{  # Define post-processing options
-                    'key': 'FFmpegExtractAudio',  # Use FFmpeg to extract audio
-                    'preferredcodec': 'mp3',  # Set preferred codec to mp3
-                    'preferredquality': '192',  # Set preferred quality to 192 kbps
+def initialize_application():
+    """Initialize required directories and files"""
+    # Get the directory containing the script
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # Define paths for required directories
+    required_dirs = {
+        'tracks': os.path.join(current_dir, 'tracks'),
+        'track_images': os.path.join(current_dir, 'track_images'),
+        'playlists': os.path.join(current_dir, 'playlists')
+    }
+    
+    # Create directories if they don't exist
+    for directory in required_dirs.values():
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+            
+    # Return the paths dictionary for use in the application
+    return required_dirs
+
+class YouTubeAPI:  # Define YouTubeAPI class for interacting with YouTube API
+    def __init__(self):
+        try:
+            # Load environment variables from .env file
+            load_dotenv()
+            
+            # Get API key from environment variable
+            self.api_key = os.getenv('YOUTUBE_API_KEY')
+            
+            if not self.api_key:
+                print("Warning: YouTube API key not found in environment variables")
+                self.youtube = None
+                return
+
+            self.youtube = build('youtube', 'v3', developerKey=self.api_key)
+
+            # Configure yt-dlp options
+            self.ydl_opts = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
                 }],
-                'quiet': True,  # Suppress output messages
-                'no_warnings': True,  # Suppress warnings
-                'extract_audio': True,  # Extract audio from video
-                'outtmpl': '%(title)s.%(ext)s',  # Define output template for file names
-                'default_search': 'auto',  # Set default search type to auto
-                'ignoreerrors': True,  # Ignore errors during download
+                'quiet': True,
+                'no_warnings': True,
+                'extract_audio': True,
+                'outtmpl': '%(title)s.%(ext)s',
+                'default_search': 'auto',
+                'ignoreerrors': True,
             }
 
-        except Exception as e:  # Catch any exceptions
-            print(f"Error initializing YouTube API: {e}")  # Print error message
-            self.youtube = None  # Set youtube client to None if initialization fails
+        except Exception as e:
+            print(f"Error initializing YouTube API: {e}")
+            self.youtube = None
 
     async def search_tracks(self, query: str, max_results: int = 10) -> List[Dict]:  # Asynchronous method to search for tracks
         """ 
@@ -125,7 +161,15 @@ class YouTubeAPI:  # Define YouTubeAPI class for interacting with YouTube API
 
     async def download_track(self, track_info: Dict):
         try:
-            for directory in ['tracks', 'track_images']:
+            # Get the current directory
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            
+            # Define complete paths for tracks and images directories
+            tracks_dir = os.path.join(current_dir, 'tracks')
+            images_dir = os.path.join(current_dir, 'track_images')
+            
+            # Create directories if they don't exist
+            for directory in [tracks_dir, images_dir]:
                 if not os.path.exists(directory):
                     os.makedirs(directory)
 
@@ -133,9 +177,11 @@ class YouTubeAPI:  # Define YouTubeAPI class for interacting with YouTube API
             existing_ids = [int(track_id) for track_id in library.library.keys()]
             next_id = str(max(existing_ids + [0]) + 1).zfill(2)
             
-            audio_path = os.path.join('tracks', f'track_{next_id}.mp3')
-            image_path = os.path.join('track_images', f'track_{next_id}.jpg')
+            # Define complete file paths
+            audio_path = os.path.join(tracks_dir, f'track_{next_id}.mp3')
+            image_path = os.path.join(images_dir, f'track_{next_id}.jpg')
 
+            # Download thumbnail
             async with aiohttp.ClientSession() as session:
                 async with session.get(track_info['thumbnail']) as response:
                     if response.status == 200:
@@ -143,6 +189,7 @@ class YouTubeAPI:  # Define YouTubeAPI class for interacting with YouTube API
                         with open(image_path, 'wb') as f:
                             f.write(image_data)
 
+            # Configure yt-dlp options with correct output path
             ydl_opts = {
                 'format': 'bestaudio/best',
                 'postprocessors': [{
@@ -150,21 +197,26 @@ class YouTubeAPI:  # Define YouTubeAPI class for interacting with YouTube API
                     'preferredcodec': 'mp3',
                     'preferredquality': '192',
                 }],
-                'outtmpl': os.path.join('tracks', f'track_{next_id}.%(ext)s'),
+                'outtmpl': os.path.join(tracks_dir, f'track_{next_id}.%(ext)s'),
                 'quiet': True,
                 'no_warnings': True,
                 'extract_audio': True,
                 'writethumbnail': False,
                 'default_search': 'auto',
                 'ignoreerrors': True,
-                'ffmpeg_location': r'C:\ffmpeg\bin\ffmpeg.exe'
+                'ffmpeg_location': r'C:\ffmpeg\bin\ffmpeg.exe'  # Make sure this path is correct
             }
 
             try:
+                # Check if FFmpeg is available
                 subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
 
+                # Download and convert the audio
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(track_info['url'], download=True)
+                    
+                    # Wait briefly for file to be completely written
+                    await asyncio.sleep(1)
                     
                     if info and os.path.exists(audio_path):
                         # Store observers and clear temporarily
@@ -174,8 +226,8 @@ class YouTubeAPI:  # Define YouTubeAPI class for interacting with YouTube API
                         # Add track to library with normalized fields
                         success = library.add_track(
                             track_id=next_id,
-                            name=track_info['name'].strip(),  # Normalize the name
-                            artist=track_info['artist'].strip(),  # Normalize the artist
+                            name=track_info['name'].strip(),
+                            artist=track_info['artist'].strip(),
                             rating=0,
                             play_count=0
                         )
@@ -438,10 +490,15 @@ class PlayerControls(UIComponent):  # Define PlayerControls class for player con
 
 class PlaylistManager:  # Define PlaylistManager class for managing playlists
     """Manages multiple playlist files and their operations"""
-    def __init__(self, playlists_dir="playlists"):  # Constructor for PlaylistManager
-        self.playlists_dir = playlists_dir  # Set directory for playlists
-        if not os.path.exists(playlists_dir):  # Check if playlists directory exists
-            os.makedirs(playlists_dir)  # Create playlists directory
+    def __init__(self):
+        # Get the directory containing the script
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        # Set the playlists directory path relative to the script location
+        self.playlists_dir = os.path.join(current_dir, "playlists")
+        
+        # Only create directory if it doesn't exist at this specific path
+        if not os.path.exists(self.playlists_dir):
+            os.makedirs(self.playlists_dir)
 
     def get_all_playlists(self):  # Method to get all playlists
         """Get list of all playlist files"""
@@ -669,12 +726,14 @@ class PlaylistDialog:  # Define PlaylistDialog class for managing playlists
 class JukeboxApp(PlayerObserver, LibraryObserver):  # Define JukeboxApp class for the main application
     """Main application class implementing observer patterns"""
     def __init__(self):  # Constructor for JukeboxApp
+        pygame.mixer.init()
         self.window = ctk.CTk()  # Create main application window
         self.window.geometry("1920x1080")  # Set window size
         self.window.attributes('-fullscreen', True)  # Make window fullscreen
         self.playlist_manager = PlaylistManager()  # Initialize PlaylistManager
         self.window.bind('<Escape>', lambda e: self.window.attributes('-fullscreen', False))  # Bind escape key to exit fullscreen
         self._updating_rating = False
+        self.app_dirs = initialize_application()
 
         # Set the default color theme
         ctk.set_appearance_mode("dark")  # Set appearance mode to dark
@@ -773,8 +832,11 @@ class JukeboxApp(PlayerObserver, LibraryObserver):  # Define JukeboxApp class fo
         """Load image for a given track number using CTkImage"""
         try:
             image_path = None
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            track_images_dir = os.path.join(current_dir, 'track_images')
+            
             for ext in ['.png', '.jpg', '.jpeg']:
-                potential_path = os.path.join('track_images', f'track_{track_number}{ext}')
+                potential_path = os.path.join(track_images_dir, f'track_{track_number}{ext}')
                 if os.path.exists(potential_path):
                     image_path = potential_path
                     break
@@ -783,9 +845,11 @@ class JukeboxApp(PlayerObserver, LibraryObserver):  # Define JukeboxApp class fo
                 pil_image = Image.open(image_path)
                 return ctk.CTkImage(light_image=pil_image, dark_image=pil_image, size=(100, 100))
             else:
-                default_path = os.path.join('track_images', 'default.png')
-                default_image = Image.open(default_path)
-                return ctk.CTkImage(light_image=default_image, dark_image=default_image, size=(100, 100))
+                default_path = os.path.join(track_images_dir, 'default.png')
+                if os.path.exists(default_path):
+                    default_image = Image.open(default_path)
+                    return ctk.CTkImage(light_image=default_image, dark_image=default_image, size=(100, 100))
+                return None
         except Exception as e:
             print(f"Error loading image: {e}")
             return None

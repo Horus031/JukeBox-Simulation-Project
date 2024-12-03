@@ -26,12 +26,15 @@ class CSVHandler(FileSystemEventHandler):
 class MusicLibrary:
     """Enhanced music library with observer pattern and CSV storage"""
     def __init__(self):
-        self._library: Dict[str, Track] = {}  # Initialize an empty dictionary for the library
-        self._observers: List[LibraryObserver] = []  # List to hold observers
-        self._library_file = "tracks.csv"  # Define the CSV file name for the library
-        self._last_modified = 0  # Initialize last modified timestamp
-        self._initialize_library()  # Load the library from CSV
-        self._setup_file_watcher()  # Set up file watcher for monitoring changes
+        # Get the directory containing the script
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        # Set the library file path relative to the script location
+        self._library_file = os.path.join(current_dir, "tracks.csv")
+        self._library: Dict[str, Track] = {}
+        self._observers: List[LibraryObserver] = []
+        self._last_modified = 0
+        self._initialize_library()
+        self._setup_file_watcher()
 
     def add_track(self, track_id: str, name: str, artist: str, rating: int = 0, play_count: int = 0) -> bool:
         """Add a new track to the library with proper UTF-8 handling"""

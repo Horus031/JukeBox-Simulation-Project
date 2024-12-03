@@ -135,15 +135,16 @@ class MusicPlayer:
 
     def load_track(self, track_number: str) -> Optional[str]:
         try:
-            track_number = str(track_number).zfill(2)  # Format track number to two digits
-            for ext in ['.mp3', '.wav']:  # Check for both .mp3 and .wav formats
-                track_path = os.path.join('tracks', f'track_{track_number}{ext}')  # Construct the track path
-                if os.path.exists(track_path):  # Check if the track file exists
-                    return track_path  # Return the valid track path
-            return None  # Return None if no track is found
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            track_number = str(track_number).zfill(2)
+            for ext in ['.mp3', '.wav']:
+                track_path = os.path.join(current_dir, 'tracks', f'track_{track_number}{ext}')
+                if os.path.exists(track_path):
+                    return track_path
+            return None
         except Exception as e:
-            print(f"Error loading track: {e}")  # Print error message if an exception occurs
-            return None  # Return None in case of an error
+            print(f"Error loading track: {e}")
+            return None
 
     def play_single_track(self, track_number: str) -> bool:
         """Play a single track and handle the audio setup"""
