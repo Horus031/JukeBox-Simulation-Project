@@ -19,11 +19,8 @@ from abc import ABC, abstractmethod  # Import ABC for creating abstract base cla
 from typing import List, Tuple, Optional, Dict  # Import typing constructs for type hinting
 from track_library import library, LibraryObserver  # Import library and observer classes for track management
 from library_item import MusicPlayer, PlayerObserver, SequentialPlaybackStrategy, RandomPlaybackStrategy  # Import music player and playback strategies
-
-# Your existing imports remain at the top
 import os
 import asyncio
-# ... other imports ...
 
 def initialize_application():
     """Initialize required directories and files"""
